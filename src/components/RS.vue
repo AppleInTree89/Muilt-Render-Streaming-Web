@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { onMounted,onUnmounted, ref } from "vue";
 import{io,Socket} from "socket.io-client"
+import{MouseInit} from "../Event/Mouse/index"
+import{KeyBroadInit} from "../Event/KeyBroad/index"
 let socket:Socket
 let rtc:RTCPeerConnection
 let _remoteStream:MediaStream
-let _dataChannel:RTCDataChannel
 const vbtnShow=ref<boolean>(true)
 const vplayer = ref<HTMLVideoElement>()
 const vbtn=ref<HTMLButtonElement>()
@@ -78,11 +79,14 @@ function initRTC()
 		}
 		//文字消息交换
 		rtc.ondatachannel = (event) => {
-			_dataChannel = event.channel;
-			_dataChannel.onmessage = (event) => {
-				var data=JSON.parse(event.data);
-        console.log(data)
-			}
+      if(event.channel.label=="mouse")
+      {
+        MouseInit(vplayer.value as HTMLVideoElement,event.channel)
+      }
+      if(event.channel.label=="key")
+      {
+        KeyBroadInit(vplayer.value as HTMLVideoElement,event.channel)
+      }
   }
 }
 function createAns()
