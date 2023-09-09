@@ -20,6 +20,9 @@ const servers = {
 function test()
 {
   initRTC()
+  _remoteStream=new MediaStream();
+  (vplayer.value as HTMLVideoElement).autoplay=true;
+  (vplayer.value as HTMLVideoElement).srcObject =_remoteStream;
   vbtnShow.value=false
   document.oncontextmenu=function()//禁用鼠标右键
 	{
@@ -47,22 +50,10 @@ function test()
 }
 function initRTC()
 {
-    rtc = new RTCPeerConnection(servers);
+  rtc = new RTCPeerConnection(servers);
     rtc.ontrack = (event) => {
-			if(event.track.kind=="video")
-			{
-				_remoteStream=new MediaStream();
-				_remoteStream.addTrack(event.track);
-			   (vplayer.value as HTMLVideoElement).autoplay=true;
-         (vplayer.value as HTMLVideoElement).srcObject =_remoteStream;
-			}
-			else
-			{
-				_remoteStream=new MediaStream();
-				_remoteStream.addTrack(event.track);
-				//this._audio.autoplay=true;
-				//this._audio.srcObject =_remoteStream;
-			}
+      _remoteStream.addTrack(event.track);
+			
 			
 		}
 		//交换信令
@@ -96,7 +87,7 @@ function createAns()
     socket.emit("answer",res.sdp)
 		})
 }
-
+rtc=null
 
 onMounted(() => {
     socket=io("http://127.0.0.1:3000",{auth:{type:"RSWeb"}})
@@ -113,6 +104,8 @@ onMounted(() => {
 })
 onUnmounted(() => {
   socket.close()
+
+
 })
 
 </script>
