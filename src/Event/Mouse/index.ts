@@ -2,15 +2,7 @@ let channel:RTCDataChannel;
 const MouseInit=(video:HTMLVideoElement,datachannel:RTCDataChannel) =>
 {
     channel=datachannel;
-    video.onmouseover=function(event)
-    {
-        
-    }
-    video.onmouseout=function(event)
-    {
-        //this.mouseOut=true;
-        //MouseUpdata._sendOutData("MoveOut","");
-    }
+
     //鼠标移动
     video.onmousemove=function(event)
     {

@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@types/socket.io-client": "^3.0.0",
+    "@vitejs/plugin-legacy": "^4.1.1",
+    "fs": "^0.0.1-security",
     "socket.io-client": "^4.7.2",
     "vue": "^3.3.4"
   },

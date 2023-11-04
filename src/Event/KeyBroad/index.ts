@@ -1,6 +1,6 @@
 import { Keymap } from "./keymap";
 let channel:RTCDataChannel;
-const KeyBroadInit=(video:HTMLVideoElement,datachannel:RTCDataChannel) =>
+const KeyBroadInit=(datachannel:RTCDataChannel) =>
 {
     channel=datachannel
     window.onkeydown=function(event:KeyboardEvent)

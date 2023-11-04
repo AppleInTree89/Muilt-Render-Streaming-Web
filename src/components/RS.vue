@@ -4,19 +4,11 @@ import{io,Socket} from "socket.io-client"
 import{MouseInit} from "../Event/Mouse/index"
 import{KeyBroadInit} from "../Event/KeyBroad/index"
 let socket:Socket
-let rtc:RTCPeerConnection
+let rtc:RTCPeerConnection|null
 let _remoteStream:MediaStream
 const vbtnShow=ref<boolean>(true)
 const vplayer = ref<HTMLVideoElement>()
 const vbtn=ref<HTMLButtonElement>()
-const servers = {
-			iceServers: [{
-				urls: ["turn:asset.yz-rxrj.com?transport=udp"],
-				credential: "admin",
-				username :"123456",
-				credentialType :"Password",
-  }],
-}
 function test()
 {
   initRTC()
@@ -24,7 +16,7 @@ function test()
   (vplayer.value as HTMLVideoElement).autoplay=true;
   (vplayer.value as HTMLVideoElement).srcObject =_remoteStream;
   vbtnShow.value=false
-  document.oncontextmenu=function()//禁用鼠标右键
+  document.oncontextmenu=function()//Disabled menu
 	{
 		return false;
 	}
@@ -38,25 +30,30 @@ function test()
     const desc = new RTCSessionDescription({
 						sdp: data,
 						type: "offer"});
-    rtc.setRemoteDescription(desc).then(() => {
-      console.log("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+    (rtc as RTCPeerConnection).setRemoteDescription(desc).then(() => {
             createAns()
 					})
   })
   socket.on("ice",(data)=>
   {
-    rtc.addIceCandidate(data);
+    (rtc as RTCPeerConnection).addIceCandidate(data);
   })
 }
 function initRTC()
 {
-  rtc = new RTCPeerConnection(servers);
+  if(rtc!=null)
+  {
+    rtc.close()
+    rtc=null
+  }
+      // @ts-ignore 
+  rtc = new RTCPeerConnection(window.rtcConfig as RTCConfiguration);
     rtc.ontrack = (event) => {
       _remoteStream.addTrack(event.track);
 			
 			
 		}
-		//交换信令
+		//exchange signaling
 		rtc.onicecandidate = (event) => {
 			var candidate = event.candidate;
 			if (candidate != null) {
@@ -65,10 +62,11 @@ function initRTC()
 					sdpMid: candidate.sdpMid,
 					sdpMLineIndex: candidate.sdpMLineIndex
 				};
-				console.log(data)
+        console.log(data)
+				socket.emit("ice",JSON.stringify(data))
 			}
 		}
-		//文字消息交换
+		//Text message exchange
 		rtc.ondatachannel = (event) => {
       if(event.channel.label=="mouse")
       {
@@ -76,25 +74,26 @@ function initRTC()
       }
       if(event.channel.label=="key")
       {
-        KeyBroadInit(vplayer.value as HTMLVideoElement,event.channel)
+        KeyBroadInit(event.channel)
       }
   }
 }
 function createAns()
 {
-  rtc.createAnswer().then((res) => {
-    rtc.setLocalDescription(res)
+  (rtc as RTCPeerConnection).createAnswer().then((res) => {
+    (rtc as RTCPeerConnection).setLocalDescription(res)
     socket.emit("answer",res.sdp)
 		})
 }
-rtc=null
+
 
 onMounted(() => {
-    socket=io("http://127.0.0.1:3000",{auth:{type:"RSWeb"}})
+    // @ts-ignore 
+    socket=io( window.ServerUrl as string,{auth:{type:"RSWeb"}})
     socket.on("connect", () => {
-    console.log("链接上中央服务器"); // undefined
+    console.log("Connect to central server"); // undefined
     socket.on("disconnect", () => 
-    { console.log("与中央服务器链接断开"); // undefined
+    { console.log("Lost link to central server"); // undefined
     });
     socket.on("error",(e) => 
     { 
@@ -153,7 +152,7 @@ body{
   height: 15vw;
   max-width: 200px;
   max-height: 200px;
-  background:url("/vite.svg") no-repeat;
+  background:url("/Play.png") no-repeat;
   background-size: contain;
   background-position:center center;
   border: 0px;
