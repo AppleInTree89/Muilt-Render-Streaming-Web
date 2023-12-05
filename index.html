@@ -3,12 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>EasyRenderStreaming</title>
+    <title>MuiltRenderStreaming</title>
   </head>
   <body>
     <div id="app"></div>
     <script>
-      window.ServerUrl="http://127.0.0.1:40968"
+      window.ServerUrl="ws://127.0.0.1:40968/web"
       window.rtcConfig= {
         bundlePolicy:"max-bundle",
         iceTransportPolicy:"all",
@@ -21,7 +21,7 @@
     }
 
     </script>
-    	<script>
+    <!--<script>
         (function (win) {
           let scripts = document.getElementsByTagName('script')
           for(let i = 0; i < scripts.length; i++) {
@@ -38,7 +38,7 @@
             }
           }
         })(window)
-      </script>
+      </script>-->	
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

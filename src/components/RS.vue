@@ -1,43 +1,67 @@
 <script setup lang="ts">
 import { onMounted,onUnmounted, ref } from "vue";
-import{io,Socket} from "socket.io-client"
 import{MouseInit} from "../Event/Mouse/index"
 import{KeyBroadInit} from "../Event/KeyBroad/index"
-let socket:Socket
+let socket:WebSocket
 let rtc:RTCPeerConnection|null
 let _remoteStream:MediaStream
 const vbtnShow=ref<boolean>(true)
 const vplayer = ref<HTMLVideoElement>()
 const vbtn=ref<HTMLButtonElement>()
-function test()
+function play()
 {
-  initRTC()
-  _remoteStream=new MediaStream();
-  (vplayer.value as HTMLVideoElement).autoplay=true;
-  (vplayer.value as HTMLVideoElement).srcObject =_remoteStream;
   vbtnShow.value=false
   document.oncontextmenu=function()//Disabled menu
 	{
 		return false;
 	}
-  socket.emit("init",(response:any)=>
-  {
-    console.log(response)
-    //vbtn.value?.style.visibility="hidden"
-  })
-  socket.on("offer",(data)=>
-  {
-    const desc = new RTCSessionDescription({
-						sdp: data,
+    //@ts-ignore
+  var url=window.ServerUrl as string
+  console.log(url);
+  //@ts-ignore
+  socket=new WebSocket(window.ServerUrl as string)
+  socket.onopen=()=>{console.log("链接成功") ;      _remoteStream=new MediaStream(); }
+  socket.onclose=()=>{console.log("链接断开")}
+  socket.onerror=()=>{console.log("链接错误")}
+  socket.onmessage=(e)=>{
+    console.log(e);
+    var data =JSON.parse(e.data)
+    console.log(e.data);
+    switch (data.Event)
+    {
+      case "init":
+      {
+        sendMessage("init","")
+        initRTC()
+      
+        break;
+      }
+      case "full":
+      {
+          alert("Not enough rendering resources please wait")
+          socket.close();
+          break;
+      }
+      case "offer":
+      {
+        const desc = new RTCSessionDescription({
+						sdp: data.Data,
 						type: "offer"});
-    (rtc as RTCPeerConnection).setRemoteDescription(desc).then(() => {
+            (rtc as RTCPeerConnection).setRemoteDescription(desc).then(() => {
             createAns()
 					})
-  })
-  socket.on("ice",(data)=>
-  {
-    (rtc as RTCPeerConnection).addIceCandidate(data);
-  })
+        break;
+      }     
+      case "ice":
+      {
+        
+        (rtc as RTCPeerConnection).addIceCandidate( JSON.parse(data.Data));
+        break;
+      }
+    }
+    console.log(e)
+  }
+
 }
 function initRTC()
 {
@@ -49,8 +73,13 @@ function initRTC()
       // @ts-ignore 
   rtc = new RTCPeerConnection(window.rtcConfig as RTCConfiguration);
     rtc.ontrack = (event) => {
+      //@ts-ignore
+      window.player=vplayer.value;
       _remoteStream.addTrack(event.track);
-			
+      console.log(vplayer.value);
+        (vplayer.value as HTMLVideoElement).autoplay=true;
+        (vplayer.value as HTMLVideoElement).srcObject =_remoteStream;
+        //vplayer.value?.play()
 			
 		}
 		//exchange signaling
@@ -63,7 +92,7 @@ function initRTC()
 					sdpMLineIndex: candidate.sdpMLineIndex
 				};
         console.log(data)
-				socket.emit("ice",JSON.stringify(data))
+				sendMessage("ice",JSON.stringify(data))
 			}
 		}
 		//Text message exchange
@@ -82,24 +111,20 @@ function createAns()
 {
   (rtc as RTCPeerConnection).createAnswer().then((res) => {
     (rtc as RTCPeerConnection).setLocalDescription(res)
-    socket.emit("answer",res.sdp)
+      sendMessage("answer",res.sdp as string)
 		})
 }
-
-
+function sendMessage(Event:string,data:string)
+{
+  var message=
+  {
+    Event:Event,
+    Data:data
+  }
+  socket.send(JSON.stringify(message))
+}
 onMounted(() => {
-    // @ts-ignore 
-    socket=io( window.ServerUrl as string,{auth:{type:"RSWeb"}})
-    socket.on("connect", () => {
-    console.log("Connect to central server"); // undefined
-    socket.on("disconnect", () => 
-    { console.log("Lost link to central server"); // undefined
-    });
-    socket.on("error",(e) => 
-    { 
-      alert(e)
-    });
-  });
+
 })
 onUnmounted(() => {
   socket.close()
@@ -115,7 +140,7 @@ onUnmounted(() => {
     <video ref="vplayer" id="tdVideo"></video>
     <audio id="tdAudio"></audio>
     
-    <button ref="vbtn" v-show="vbtnShow" @click="test" id="playButton"></button>
+    <button ref="vbtn" v-show="vbtnShow" @click="play" id="playButton"></button>
   </div>
 </template>
 
