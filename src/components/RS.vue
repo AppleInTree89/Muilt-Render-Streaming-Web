@@ -2,6 +2,7 @@
 import { onMounted,onUnmounted, ref } from "vue";
 import{MouseInit} from "../Event/Mouse/index"
 import{KeyBroadInit} from "../Event/KeyBroad/index"
+import{CheckActiveInit} from"../Event/CheckActive/index"
 let socket:WebSocket
 let rtc:RTCPeerConnection|null
 let _remoteStream:MediaStream
@@ -61,13 +62,13 @@ function play()
     }
     console.log(e)
   }
-
 }
 function initRTC()
 {
   if(rtc!=null)
   {
     rtc.close()
+    _remoteStream=new MediaStream();
     rtc=null
   }
       // @ts-ignore 
@@ -105,6 +106,10 @@ function initRTC()
       {
         KeyBroadInit(event.channel)
       }
+      if(event.channel.label=="active")
+      {
+        CheckActiveInit(event.channel)
+      }
   }
 }
 function createAns()
@@ -123,13 +128,18 @@ function sendMessage(Event:string,data:string)
   }
   socket.send(JSON.stringify(message))
 }
+document.addEventListener("visibilitychange", () => {
+        if (document.hidden) {
+          sendMessage("DisConnect","")
+        } else {
+          sendMessage("Connect","")
+        }
+    })
 onMounted(() => {
 
 })
 onUnmounted(() => {
   socket.close()
-
-
 })
 
 </script>
