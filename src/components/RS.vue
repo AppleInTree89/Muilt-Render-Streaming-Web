@@ -3,8 +3,10 @@ import { onMounted,onUnmounted, ref } from "vue";
 import{MouseInit} from "../Event/Mouse/index"
 import{KeyBroadInit} from "../Event/KeyBroad/index"
 import{CheckActiveInit} from"../Event/CheckActive/index"
+import{MessageInit,sendMsg} from "../Event/Message/index"
 let socket:WebSocket
 let rtc:RTCPeerConnection|null
+let mrtc:RTCPeerConnection|null
 let _remoteStream:MediaStream
 const vbtnShow=ref<boolean>(true)
 const vplayer = ref<HTMLVideoElement>()
@@ -34,7 +36,6 @@ function play()
       {
         sendMessage("init","")
         initRTC()
-      
         break;
       }
       case "full":
@@ -59,10 +60,27 @@ function play()
         (rtc as RTCPeerConnection).addIceCandidate( JSON.parse(data.Data));
         break;
       }
+      case "moffer":
+      {
+        const desc = new RTCSessionDescription({
+						sdp: data.Data,
+						type: "offer"});
+            (mrtc as RTCPeerConnection).setRemoteDescription(desc).then(() => {
+              mcreateAns()
+					})
+        break;
+      }     
+      case "mice":
+      {
+        
+        (mrtc as RTCPeerConnection).addIceCandidate( JSON.parse(data.Data));
+        break;
+      }
     }
     console.log(e)
   }
 }
+
 function initRTC()
 {
   if(rtc!=null)
@@ -71,8 +89,15 @@ function initRTC()
     _remoteStream=new MediaStream();
     rtc=null
   }
+  if(mrtc!=null)
+  {
+    mrtc.close()
+    mrtc=null
+  }
       // @ts-ignore 
   rtc = new RTCPeerConnection(window.rtcConfig as RTCConfiguration);
+     // @ts-ignore 
+  mrtc = new RTCPeerConnection(window.rtcConfig as RTCConfiguration);
     rtc.ontrack = (event) => {
       //@ts-ignore
       window.player=vplayer.value;
@@ -96,6 +121,28 @@ function initRTC()
 				sendMessage("ice",JSON.stringify(data))
 			}
 		}
+    //exchange signaling
+		mrtc.onicecandidate = (event) => {
+			var candidate = event.candidate;
+			if (candidate != null) {
+				var data = {
+					candidate: candidate.candidate,
+					sdpMid: candidate.sdpMid,
+					sdpMLineIndex: candidate.sdpMLineIndex
+				};
+        console.log(data)
+				sendMessage("mice",JSON.stringify(data))
+			}
+		}
+    	//Text message exchange
+		mrtc.ondatachannel = (event) => {
+      if(event.channel.label=="message")
+      {
+        MessageInit(event.channel);
+         //@ts-ignore
+        window.send=sendMsg
+      }
+    }
 		//Text message exchange
 		rtc.ondatachannel = (event) => {
       if(event.channel.label=="mouse")
@@ -117,6 +164,13 @@ function createAns()
   (rtc as RTCPeerConnection).createAnswer().then((res) => {
     (rtc as RTCPeerConnection).setLocalDescription(res)
       sendMessage("answer",res.sdp as string)
+		})
+}
+function mcreateAns()
+{
+  (mrtc as RTCPeerConnection).createAnswer().then((res) => {
+    (mrtc as RTCPeerConnection).setLocalDescription(res)
+      sendMessage("manswer",res.sdp as string)
 		})
 }
 function sendMessage(Event:string,data:string)
