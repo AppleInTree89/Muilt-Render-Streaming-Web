@@ -2,7 +2,6 @@
 import { onMounted,onUnmounted, ref } from "vue";
 import{MouseInit} from "../Event/Mouse/index"
 import{KeyBroadInit} from "../Event/KeyBroad/index"
-import{CheckActiveInit} from"../Event/CheckActive/index"
 import{MessageInit,sendMsg} from "../Event/Message/index"
 let socket:WebSocket
 let rtc:RTCPeerConnection|null
@@ -105,10 +104,8 @@ function initRTC()
       console.log(vplayer.value);
         (vplayer.value as HTMLVideoElement).autoplay=true;
         (vplayer.value as HTMLVideoElement).srcObject =_remoteStream;
-        //vplayer.value?.play()
 			
 		}
-		//exchange signaling
 		rtc.onicecandidate = (event) => {
 			var candidate = event.candidate;
 			if (candidate != null) {
@@ -153,10 +150,7 @@ function initRTC()
       {
         KeyBroadInit(event.channel)
       }
-      if(event.channel.label=="active")
-      {
-        CheckActiveInit(event.channel)
-      }
+
   }
 }
 function createAns()
@@ -182,6 +176,8 @@ function sendMessage(Event:string,data:string)
   }
   socket.send(JSON.stringify(message))
 }
+      // @ts-ignore 
+
 document.addEventListener("visibilitychange", () => {
         if (document.hidden) {
           sendMessage("DisConnect","")

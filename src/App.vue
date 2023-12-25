@@ -8,4 +8,9 @@ import RS from './components/RS.vue'
 </template>
 
 <style scoped>
+body {
+   
+   cursor: none;
+ }
+ 
 </style>

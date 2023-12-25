@@ -1,77 +1,86 @@
 let channel:RTCDataChannel;
-const MouseInit=(video:HTMLVideoElement,datachannel:RTCDataChannel) =>
+let video:HTMLVideoElement;
+const MouseInit=(videoEle:HTMLVideoElement,datachannel:RTCDataChannel) =>
 {
     channel=datachannel;
-
+    video=videoEle;
+    channel.onmessage=(e)=>
+    {
+       
+        if(e.data=="1")
+        {
+            video.focus();
+            video.requestPointerLock();
+        }
+        else
+        {
+            
+            document.exitPointerLock();
+            //video.blur()
+        
+        }
+       
+    }
     //鼠标移动
     video.onmousemove=function(event)
     {
         var data= getMousePos(event.offsetX,event.offsetY,video);
+        var movedata= getmovePos(event.movementX,event.movementY,video);
         if(data.x>0&&data.y>0&&data.x<video.videoWidth&&data.y<video.videoHeight)
         {
             var value=
-            {
+            {   
+                id:0,
+                delayX:movedata.x,
+                delayY:movedata.y,
                 x:data.x,
                 y:data.y,
+                LockState:document.pointerLockElement===video
             }
-            sentEvent(0,JSON.stringify(value))
+            sentEvent(JSON.stringify(value))
         }
-        
     }
     //鼠标按下
     video.onmousedown=function(event)
     {
-        console.log(event.button)
-        if(event.button==0)
-        {
-            sentEvent(1,"0")
+        var value=
+        {   
+            id:1,
+            buttonid:event.buttons,
+            LockState:document.pointerLockElement===video
         }
-        if(event.button==1)
-        {
-            sentEvent(1,"2")
-        }
-        if(event.button==2)
-        {
-            sentEvent(1,"1")
-        }
+        sentEvent(JSON.stringify(value))
     }
     
     video.onmouseup=function(event)
     {
-        console.log(event.button)
-        if(event.button==0)
-        {
-            sentEvent(2,"0")
+        var value=
+        {   
+            id:1,
+            buttonid:event.buttons,
+            LockState:document.pointerLockElement===video
         }
-        if(event.button==1)
-        {
-            sentEvent(2,"2")
-        }
-        if(event.button==2)
-        {
-            sentEvent(2,"1")
-        }
+        sentEvent(JSON.stringify(value))
     }
+
     window.onwheel=function(e)
     {
-        if(e.deltaY>0)
-         sentEvent(3,"1")
-        else
-         sentEvent(3,"-1")
-        console.log(e.deltaY)
+        var value=
+        {   
+            id:2,
+            ScrollX:e.deltaX,
+            ScrollY:e.deltaY*1.2,
+            LockState:document.pointerLockElement===video
+        }
+        sentEvent(JSON.stringify(value))
     }
-    window.onblur = function() {
-        sentEvent(4,"0")
-    }
+ 
 }
-const sentEvent=(event:number,obj:string)=>
+const sentEvent=(data:string)=>
 {
-    var data={
-        id:event,
-        data:obj
-    }
+    
     if(channel.readyState=="open")
-    channel.send(JSON.stringify(data))
+    channel.send(data)
 }
 
 const getMousePos=(offsetx:number,offsety:number,video:HTMLVideoElement)=>
@@ -101,6 +110,31 @@ const getMousePos=(offsetx:number,offsety:number,video:HTMLVideoElement)=>
         var data={x:-1,y:-1};
         return data;
     }
+    var data={x:x,y:y};
+    return data;
+}
+const getmovePos=(offsetx:number,offsety:number,video:HTMLVideoElement)=>
+{
+    let x:number
+    let y:number
+    var owidth= video.videoWidth;
+    var oheight=video.videoHeight;
+    var vwidth =video.clientWidth;
+    var vheight=video.clientHeight;
+    if(owidth/oheight>vwidth/vheight)
+    {
+        const scale=vwidth/owidth;
+        x=Math.round(offsetx/scale);
+        y=-Math.round((offsety)/scale);
+    }
+    else
+    {
+        const scale=vheight/oheight;
+        const upsize=(vwidth-(owidth*scale))/2;
+        x=Math.round(offsetx/scale);
+        y=-Math.round((offsety)/scale);
+    }
+   
     var data={x:x,y:y};
     return data;
 }

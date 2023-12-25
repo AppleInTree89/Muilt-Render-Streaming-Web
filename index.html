@@ -21,25 +21,7 @@
     }
 
     </script>
-    <!--<script>
-        (function (win) {
-          let scripts = document.getElementsByTagName('script')
-          for(let i = 0; i < scripts.length; i++) {
-            let script = scripts[i]
-            let url = script.getAttribute("src")
-            let type = script.getAttribute("type")
-            let scriptText = script.innerHTML
-            if (url || type === "module") {
-              let tag=document.createElement('script');
-              tag.setAttribute('url',url);
-              tag.innerHTML = scriptText
-              script.remove()
-              document.getElementsByTagName('head')[0].appendChild(tag)
-            }
-          }
-        })(window)
-      </script>-->	
+  
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
-
