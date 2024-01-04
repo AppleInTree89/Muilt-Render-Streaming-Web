@@ -130,6 +130,7 @@ const getmovePos=(offsetx:number,offsety:number,video:HTMLVideoElement)=>
     else
     {
         const scale=vheight/oheight;
+        //@ts-ignore
         const upsize=(vwidth-(owidth*scale))/2;
         x=Math.round(offsetx/scale);
         y=-Math.round((offsety)/scale);

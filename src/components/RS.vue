@@ -148,7 +148,7 @@ function initRTC()
       }
       if(event.channel.label=="key")
       {
-        KeyBroadInit(event.channel)
+        KeyBroadInit(vplayer.value as HTMLVideoElement,event.channel)
       }
 
   }
